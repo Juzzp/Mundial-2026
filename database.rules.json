@@ -1,0 +1,11 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomId": {
+        ".read": true,
+        ".write": true,
+        ".validate": "newData.hasChildren(['code','created','p1Name','p2Name','p1','p2','results'])"
+      }
+    }
+  }
+}
