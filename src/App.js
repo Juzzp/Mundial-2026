@@ -48,23 +48,22 @@ const FontLoader = () => (
   `}</style>
 );
 
-// ─── SECURITY ─────────────────────────────────────────────────────────────────
 const MAX_NAME_LENGTH = 24;
 const MAX_JOIN_ATTEMPTS = 8;
 const JOIN_COOLDOWN_MS = 30000;
 
 const VALID_TEAMS = new Set([
-  "México","Sudáfrica","Corea del Sur","Rep. UEFA D",
-  "Canadá","Rep. UEFA 1","Qatar","Suiza",
+  "México","Sudáfrica","Corea del Sur","Rep. Checa",
+  "Canadá","Bosnia-Herzegovina","Qatar","Suiza",
   "Brasil","Marruecos","Haití","Escocia",
-  "EE.UU.","Paraguay","Australia","Rep. UEFA 3",
+  "EE.UU.","Paraguay","Australia","Turquía",
   "Alemania","Curazao","Costa de Marfil","Ecuador",
-  "Países Bajos","Japón","Rep. UEFA 2","Túnez",
+  "Países Bajos","Japón","Suecia","Túnez",
   "Bélgica","Egipto","Irán","Nueva Zelanda",
   "España","Cabo Verde","Arabia Saudita","Uruguay",
-  "Francia","Senegal","Rep. Intercon. 2","Noruega",
+  "Francia","Senegal","Irak","Noruega",
   "Argentina","Argelia","Austria","Jordania",
-  "Portugal","Uzbekistán","Colombia","Rep. Intercon. 1",
+  "Portugal","Uzbekistán","Colombia","R.D. del Congo",
   "Inglaterra","Croacia","Ghana","Panamá",
 ]);
 const VALID_GROUP_IDS = new Set(["A","B","C","D","E","F","G","H","I","J","K","L"]);
@@ -73,12 +72,8 @@ const VALID_POS = new Set(["p1","p2"]);
 function sanitizeName(raw) {
   return raw.replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑäöÄÖß0-9 .\-_]/g,"").slice(0,MAX_NAME_LENGTH).trimStart();
 }
-function sanitizeCode(raw) {
-  return raw.replace(/[^A-Z0-9]/g,"").slice(0,12);
-}
-function isValidTeam(val) {
-  return val === "" || VALID_TEAMS.has(val);
-}
+function sanitizeCode(raw) { return raw.replace(/[^A-Z0-9]/g,"").slice(0,12); }
+function isValidTeam(val) { return val === "" || VALID_TEAMS.has(val); }
 
 function validateRoom(data) {
   if (!data || typeof data !== "object") return null;
@@ -89,7 +84,6 @@ function validateRoom(data) {
   const p1Name = sanitizeName(data.p1Name);
   const p2Name = sanitizeName(data.p2Name);
   if (!p1Name || !p2Name) return null;
-
   function validatePlayer(p) {
     if (!p || typeof p !== "object") return { preds: null, locked: false };
     const locked = p.locked === true;
@@ -102,15 +96,11 @@ function validateRoom(data) {
         if (!VALID_GROUP_IDS.has(gid)) continue;
         const g = preds.grupos[gid];
         if (!g || typeof g !== "object") continue;
-        grupos[gid] = {
-          p1: isValidTeam(g.p1) ? (g.p1||"") : "",
-          p2: isValidTeam(g.p2) ? (g.p2||"") : "",
-        };
+        grupos[gid] = { p1: isValidTeam(g.p1)?(g.p1||""):"", p2: isValidTeam(g.p2)?(g.p2||""):"" };
       }
     }
     return { preds: { grupos, campeon: isValidTeam(preds.campeon)?(preds.campeon||""):"", finalista: isValidTeam(preds.finalista)?(preds.finalista||""):"" }, locked };
   }
-
   function validateResults(r) {
     if (!r || typeof r !== "object") return { grupos:{}, campeon:"", finalista:"" };
     const grupos = {};
@@ -124,54 +114,46 @@ function validateRoom(data) {
     }
     return { grupos, campeon: isValidTeam(r.campeon)?(r.campeon||""):"", finalista: isValidTeam(r.finalista)?(r.finalista||""):"" };
   }
-
-  return {
-    code: data.code, created: typeof data.created==="number"?data.created:Date.now(),
-    p1Name, p2Name,
-    p1: validatePlayer(data.p1), p2: validatePlayer(data.p2),
-    results: validateResults(data.results),
-  };
+  return { code: data.code, created: typeof data.created==="number"?data.created:Date.now(), p1Name, p2Name, p1: validatePlayer(data.p1), p2: validatePlayer(data.p2), results: validateResults(data.results) };
 }
 
-// ─── DATA ─────────────────────────────────────────────────────────────────────
 const GRUPOS = [
-  { id:"A", equipos:["México","Sudáfrica","Corea del Sur","Rep. UEFA D"] },
-  { id:"B", equipos:["Canadá","Rep. UEFA 1","Qatar","Suiza"] },
+  { id:"A", equipos:["México","Sudáfrica","Corea del Sur","Rep. Checa"] },
+  { id:"B", equipos:["Canadá","Bosnia-Herzegovina","Qatar","Suiza"] },
   { id:"C", equipos:["Brasil","Marruecos","Haití","Escocia"] },
-  { id:"D", equipos:["EE.UU.","Paraguay","Australia","Rep. UEFA 3"] },
+  { id:"D", equipos:["EE.UU.","Paraguay","Australia","Turquía"] },
   { id:"E", equipos:["Alemania","Curazao","Costa de Marfil","Ecuador"] },
-  { id:"F", equipos:["Países Bajos","Japón","Rep. UEFA 2","Túnez"] },
+  { id:"F", equipos:["Países Bajos","Japón","Suecia","Túnez"] },
   { id:"G", equipos:["Bélgica","Egipto","Irán","Nueva Zelanda"] },
   { id:"H", equipos:["España","Cabo Verde","Arabia Saudita","Uruguay"] },
-  { id:"I", equipos:["Francia","Senegal","Rep. Intercon. 2","Noruega"] },
+  { id:"I", equipos:["Francia","Senegal","Irak","Noruega"] },
   { id:"J", equipos:["Argentina","Argelia","Austria","Jordania"] },
-  { id:"K", equipos:["Portugal","Uzbekistán","Colombia","Rep. Intercon. 1"] },
+  { id:"K", equipos:["Portugal","Uzbekistán","Colombia","R.D. del Congo"] },
   { id:"L", equipos:["Inglaterra","Croacia","Ghana","Panamá"] },
 ];
 
 const FLAGS = {
-  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","Rep. UEFA D":"🏳️",
-  "Canadá":"🇨🇦","Rep. UEFA 1":"🏳️","Qatar":"🇶🇦","Suiza":"🇨🇭",
+  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","Rep. Checa":"🇨🇿",
+  "Canadá":"🇨🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶🇦","Suiza":"🇨🇭",
   "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭🇹","Escocia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "EE.UU.":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Rep. UEFA 3":"🏳️",
+  "EE.UU.":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇹🇷",
   "Alemania":"🇩🇪","Curazao":"🇨🇼","Costa de Marfil":"🇨🇮","Ecuador":"🇪🇨",
-  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Rep. UEFA 2":"🏳️","Túnez":"🇹🇳",
+  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇹🇳",
   "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮🇷","Nueva Zelanda":"🇳🇿",
   "España":"🇪🇸","Cabo Verde":"🇨🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
-  "Francia":"🇫🇷","Senegal":"🇸🇳","Rep. Intercon. 2":"🏳️","Noruega":"🇳🇴",
+  "Francia":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Noruega":"🇳🇴",
   "Argentina":"🇦🇷","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
-  "Portugal":"🇵🇹","Uzbekistán":"🇺🇿","Colombia":"🇨🇴","Rep. Intercon. 1":"🏳️",
+  "Portugal":"🇵🇹","Uzbekistán":"🇺🇿","Colombia":"🇨🇴","R.D. del Congo":"🇨🇩",
   "Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croacia":"🇭🇷","Ghana":"🇬🇭","Panamá":"🇵🇦",
 };
 
 const TODOS = [...new Set(GRUPOS.flatMap(g => g.equipos))];
 const PUNTOS = { p1:2, p2:1, campeon:10, finalista:5 };
-
 const PLAYER_COLORS = [
   { primary:"#e8417a", secondary:"#ff9cc0", glow:"rgba(232,65,122,0.3)", bg:"rgba(232,65,122,0.08)", border:"rgba(232,65,122,0.25)" },
-  { primary:"#1a6fc4", secondary:"#5db0ff", glow:"rgba(26,111,196,0.3)",  bg:"rgba(26,111,196,0.08)",  border:"rgba(26,111,196,0.25)" },
-  { primary:"#e07b20", secondary:"#ffaa55", glow:"rgba(224,123,32,0.3)",  bg:"rgba(224,123,32,0.08)",  border:"rgba(224,123,32,0.25)" },
-  { primary:"#8b2fc9", secondary:"#c06aff", glow:"rgba(139,47,201,0.3)",  bg:"rgba(139,47,201,0.08)",  border:"rgba(139,47,201,0.25)" },
+  { primary:"#1a6fc4", secondary:"#5db0ff", glow:"rgba(26,111,196,0.3)", bg:"rgba(26,111,196,0.08)", border:"rgba(26,111,196,0.25)" },
+  { primary:"#e07b20", secondary:"#ffaa55", glow:"rgba(224,123,32,0.3)", bg:"rgba(224,123,32,0.08)", border:"rgba(224,123,32,0.25)" },
+  { primary:"#8b2fc9", secondary:"#c06aff", glow:"rgba(139,47,201,0.3)", bg:"rgba(139,47,201,0.08)", border:"rgba(139,47,201,0.25)" },
 ];
 
 function genCode() {
@@ -203,7 +185,6 @@ function emptyPreds() {
   return { grupos, campeon:"", finalista:"" };
 }
 
-// ─── APP ──────────────────────────────────────────────────────────────────────
 export default function App() {
   const [screen, setScreen]       = useState("home");
   const [lang, setLang]           = useState("es");
@@ -222,19 +203,16 @@ export default function App() {
   const [p2Name, setP2Name]       = useState("");
   const [namesSet, setNamesSet]   = useState(false);
   const [connected, setConnected] = useState(false);
-
   const joinAttempts = useRef(0);
   const joinLockedAt = useRef(null);
   const unsubscribe  = useRef(null);
 
-  const de    = lang==="de";
-  const myColor  = playerIdx!==null ? PLAYER_COLORS[playerIdx] : PLAYER_COLORS[0];
-  const myName   = playerIdx===0 ? (p1Name||"Jugador 1") : (p2Name||"Jugador 2");
-  const myKey    = `p${playerIdx!==null?playerIdx+1:1}`;
-
+  const de = lang==="de";
+  const myColor = playerIdx!==null ? PLAYER_COLORS[playerIdx] : PLAYER_COLORS[0];
+  const myName  = playerIdx===0 ? (p1Name||"Jugador 1") : (p2Name||"Jugador 2");
+  const myKey   = `p${playerIdx!==null?playerIdx+1:1}`;
   const showMsg = (text,type="ok") => { setMsg(text); setMsgType(type); setTimeout(()=>setMsg(""),3500); };
 
-  // ─── REALTIME SUBSCRIPTION ────────────────────────────────────────────────
   useEffect(() => {
     if (!roomCode || screen==="home" || screen==="join") return;
     if (unsubscribe.current) unsubscribe.current();
@@ -247,40 +225,32 @@ export default function App() {
     return () => { if (unsubscribe.current) unsubscribe.current(); };
   }, [roomCode, screen]);
 
-  // ─── CREATE ROOM ──────────────────────────────────────────────────────────
   const createRoom = async () => {
     const c1=sanitizeName(p1Name); const c2=sanitizeName(p2Name);
-    if (!c1||!c2) { showMsg(de?"Namen fehlen.":"Completa ambos nombres.","error"); return; }
-    if (c1.toLowerCase()===c2.toLowerCase()) { showMsg(de?"Verschiedene Namen.":"Los nombres deben ser distintos.","error"); return; }
+    if (!c1||!c2) { showMsg("Completa ambos nombres.","error"); return; }
+    if (c1.toLowerCase()===c2.toLowerCase()) { showMsg("Los nombres deben ser distintos.","error"); return; }
     setLoading(true);
     const code = genCode();
-    const newRoom = {
-      code, created:Date.now(), p1Name:c1, p2Name:c2,
-      p1:{preds:null,locked:false}, p2:{preds:null,locked:false},
-      results:{grupos:{},campeon:"",finalista:""},
-    };
+    const newRoom = { code, created:Date.now(), p1Name:c1, p2Name:c2, p1:{preds:null,locked:false}, p2:{preds:null,locked:false}, results:{grupos:{},campeon:"",finalista:""} };
     const ok = await saveRoom(code, newRoom);
-    if (!ok) { showMsg(de?"Fehler.":"Error al crear la sala.","error"); setLoading(false); return; }
+    if (!ok) { showMsg("Error al crear la sala.","error"); setLoading(false); return; }
     setRoomCode(code); setRoom(newRoom); setResults(newRoom.results);
     setPreds(emptyPreds()); setLoading(false); setScreen("predict"); setPaso(0);
   };
 
-  // ─── JOIN ROOM ────────────────────────────────────────────────────────────
   const joinRoom = async () => {
     if (joinLockedAt.current) {
       const elapsed = Date.now()-joinLockedAt.current;
-      if (elapsed<JOIN_COOLDOWN_MS) {
-        showMsg(de?`Warte ${Math.ceil((JOIN_COOLDOWN_MS-elapsed)/1000)}s.`:`Espera ${Math.ceil((JOIN_COOLDOWN_MS-elapsed)/1000)}s.`,"error");
-        return;
-      } else { joinLockedAt.current=null; joinAttempts.current=0; }
+      if (elapsed<JOIN_COOLDOWN_MS) { showMsg(`Espera ${Math.ceil((JOIN_COOLDOWN_MS-elapsed)/1000)}s.`,"error"); return; }
+      else { joinLockedAt.current=null; joinAttempts.current=0; }
     }
     const code = sanitizeCode(joinCode.trim().toUpperCase());
-    if (!code) { showMsg(de?"Ungültiger Code.":"Código inválido.","error"); return; }
+    if (!code) { showMsg("Código inválido.","error"); return; }
     setLoading(true);
     const r = await loadRoom(code);
     if (r) {
       const validated = validateRoom(r);
-      if (!validated) { showMsg(de?"Ungültige Daten.":"Datos inválidos.","error"); setLoading(false); return; }
+      if (!validated) { showMsg("Datos inválidos.","error"); setLoading(false); return; }
       joinAttempts.current=0;
       setRoom(validated); setRoomCode(code);
       setP1Name(validated.p1Name||""); setP2Name(validated.p2Name||"");
@@ -290,49 +260,37 @@ export default function App() {
       setScreen("predict"); setPaso(0);
     } else {
       joinAttempts.current+=1;
-      if (joinAttempts.current>=MAX_JOIN_ATTEMPTS) {
-        joinLockedAt.current=Date.now();
-        showMsg(de?"Zu viele Versuche. 30s Pause.":"Demasiados intentos. Pausa 30s.","error");
-      } else {
-        showMsg(de?"Raum nicht gefunden.":"Sala no encontrada. Revisa el código.","error");
-      }
+      if (joinAttempts.current>=MAX_JOIN_ATTEMPTS) { joinLockedAt.current=Date.now(); showMsg("Demasiados intentos. Pausa 30s.","error"); }
+      else showMsg("Sala no encontrada. Revisa el código.","error");
     }
     setLoading(false);
   };
 
-  // ─── SAVE PREDS ───────────────────────────────────────────────────────────
   const savePreds = async (lock=false) => {
     if (!roomCode||playerIdx===null) return;
     const cleanGrupos={};
-    GRUPOS.forEach(g=>{
-      const gp=preds.grupos?.[g.id]||{};
-      cleanGrupos[g.id]={p1:isValidTeam(gp.p1)?(gp.p1||""):"",p2:isValidTeam(gp.p2)?(gp.p2||""):""};
-    });
+    GRUPOS.forEach(g=>{ const gp=preds.grupos?.[g.id]||{}; cleanGrupos[g.id]={p1:isValidTeam(gp.p1)?(gp.p1||""):"",p2:isValidTeam(gp.p2)?(gp.p2||""):""}; });
     const cleanPreds={grupos:cleanGrupos,campeon:isValidTeam(preds.campeon)?(preds.campeon||""):"",finalista:isValidTeam(preds.finalista)?(preds.finalista||""):""};
     setLoading(true);
     const fresh=await loadRoom(roomCode);
-    if (!fresh) { showMsg(de?"Verbindungsfehler.":"Error de conexión.","error"); setLoading(false); return; }
+    if (!fresh) { showMsg("Error de conexión.","error"); setLoading(false); return; }
     const validated=validateRoom(fresh);
     if (!validated) { showMsg("Error de datos.","error"); setLoading(false); return; }
     const updated={...validated,[myKey]:{preds:cleanPreds,locked:lock}};
     const ok=await saveRoom(roomCode,updated);
     if (ok) { showMsg(lock?"✓ Predicciones confirmadas":"✓ Borrador guardado","ok"); if(lock) setScreen("dashboard"); }
-    else showMsg(de?"Speichern fehlgeschlagen.":"No se pudo guardar.","error");
+    else showMsg("No se pudo guardar.","error");
     setLoading(false);
   };
 
-  // ─── SAVE RESULTS ─────────────────────────────────────────────────────────
   const saveResults = async () => {
     if (!roomCode) return;
     const cleanGrupos={};
-    GRUPOS.forEach(g=>{
-      const rg=results.grupos?.[g.id]||{};
-      cleanGrupos[g.id]={p1:isValidTeam(rg.p1)?(rg.p1||""):"",p2:isValidTeam(rg.p2)?(rg.p2||""):""};
-    });
+    GRUPOS.forEach(g=>{ const rg=results.grupos?.[g.id]||{}; cleanGrupos[g.id]={p1:isValidTeam(rg.p1)?(rg.p1||""):"",p2:isValidTeam(rg.p2)?(rg.p2||""):""}; });
     const cleanRes={grupos:cleanGrupos,campeon:isValidTeam(results.campeon)?(results.campeon||""):"",finalista:isValidTeam(results.finalista)?(results.finalista||""):""};
     setLoading(true);
     const fresh=await loadRoom(roomCode);
-    if (!fresh) { showMsg(de?"Verbindungsfehler.":"Error de conexión.","error"); setLoading(false); return; }
+    if (!fresh) { showMsg("Error de conexión.","error"); setLoading(false); return; }
     const validated=validateRoom(fresh);
     if (!validated) { showMsg("Error.","error"); setLoading(false); return; }
     const ok=await saveRoom(roomCode,{...validated,results:cleanRes});
@@ -353,17 +311,12 @@ export default function App() {
   const leaderName=leader==="p1"?(room?.p1Name||"Jugador 1"):(room?.p2Name||"Jugador 2");
   const leaderColor=leader==="p1"?PLAYER_COLORS[0]:PLAYER_COLORS[1];
 
-  // ─── SHARED UI ────────────────────────────────────────────────────────────
   const PitchBg=()=>(<><div className="pitch-bg"/><div className="grass-stripes"/><div className="stadium-lights"/><div className="center-circle"/><div className="corner-arc tl"/><div className="corner-arc tr"/><div className="corner-arc bl"/><div className="corner-arc br"/><div style={{position:"fixed",left:"50%",top:0,bottom:0,width:1,background:"rgba(255,255,255,0.025)",transform:"translateX(-50%)",pointerEvents:"none",zIndex:0}}/><div style={{position:"fixed",top:"50%",left:0,right:0,height:1,background:"rgba(255,255,255,0.025)",transform:"translateY(-50%)",pointerEvents:"none",zIndex:0}}/><div style={{position:"fixed",left:"50%",top:0,transform:"translateX(-50%)",width:280,height:100,border:"1px solid rgba(255,255,255,0.025)",borderTop:"none",pointerEvents:"none",zIndex:0}}/><div style={{position:"fixed",left:"50%",bottom:0,transform:"translateX(-50%)",width:280,height:100,border:"1px solid rgba(255,255,255,0.025)",borderBottom:"none",pointerEvents:"none",zIndex:0}}/></>);
-
   const TopBar=({back})=>(<div style={{display:"flex",alignItems:"center",justifyContent:"space-between",marginBottom:28}}><div style={{display:"flex",alignItems:"center",gap:10}}>{back&&<button className="btn-ghost" onClick={back} style={{padding:"7px 14px",fontSize:13}}>←</button>}<div><div style={{fontFamily:"'Bebas Neue',sans-serif",fontSize:"clamp(18px,4vw,26px)",letterSpacing:3,background:"linear-gradient(135deg,#f5f0e8,#d4a017)",WebkitBackgroundClip:"text",WebkitTextFillColor:"transparent"}}>Predicciones Mundialistas</div>{roomCode&&(<div style={{fontFamily:"'Oswald',sans-serif",fontSize:11,color:"#4a3a22",letterSpacing:2,marginTop:1}}>SALA <span style={{color:"#d4a017",fontWeight:"bold"}}>{roomCode}</span>{playerIdx!==null&&<span style={{color:myColor.primary}}> · {myName}</span>}{connected&&<span style={{marginLeft:8}}><span className="live-dot"/>LIVE</span>}</div>)}</div></div><button onClick={()=>setLang(l=>l==="es"?"de":"es")} style={{background:"rgba(212,160,23,0.08)",border:"1px solid rgba(212,160,23,0.2)",borderRadius:16,padding:"5px 14px",color:"#d4a017",fontSize:11,cursor:"pointer",fontFamily:"'Oswald',sans-serif",letterSpacing:1}}>{lang==="es"?"🇩🇪 Deutsch":"🇪🇨 Español"}</button></div>);
-
   const MsgBanner=()=>msg?(<div style={{textAlign:"center",color:msgType==="ok"?"#5dff8a":"#ff7070",fontSize:13,marginBottom:12,fontFamily:"'Oswald',sans-serif",letterSpacing:0.5}}>{msg}</div>):null;
-
   const wrap={maxWidth:780,margin:"0 auto",padding:"24px 16px 60px"};
   const pageBase={minHeight:"100vh",fontFamily:"'Oswald',sans-serif",color:"#f5f0e8",position:"relative"};
 
-  // ════════════ HOME ════════════════════════════════════════════════════════
   if (screen==="home") return (
     <div style={pageBase}><FontLoader/><PitchBg/>
     <div className="content" style={{...wrap,maxWidth:700}}>
@@ -388,7 +341,7 @@ export default function App() {
             ))}
           </div>
           <div style={{textAlign:"center",marginTop:16}}>
-            <button className="btn-gold" onClick={()=>{const c1=sanitizeName(p1Name),c2=sanitizeName(p2Name);if(!c1||!c2){showMsg(de?"Namen fehlen.":"Completa ambos nombres.","error");return;}if(c1.toLowerCase()===c2.toLowerCase()){showMsg(de?"Verschiedene Namen.":"Los nombres deben ser distintos.","error");return;}setNamesSet(true);}} disabled={!p1Name.trim()||!p2Name.trim()}>{de?"WEITER →":"CONTINUAR →"}</button>
+            <button className="btn-gold" onClick={()=>{const c1=sanitizeName(p1Name),c2=sanitizeName(p2Name);if(!c1||!c2){showMsg("Completa ambos nombres.","error");return;}if(c1.toLowerCase()===c2.toLowerCase()){showMsg("Los nombres deben ser distintos.","error");return;}setNamesSet(true);}} disabled={!p1Name.trim()||!p2Name.trim()}>{de?"WEITER →":"CONTINUAR →"}</button>
           </div>
         </div>
       ):(
@@ -417,7 +370,6 @@ export default function App() {
     </div></div>
   );
 
-  // ════════════ JOIN ════════════════════════════════════════════════════════
   if (screen==="join") return (
     <div style={pageBase}><FontLoader/><PitchBg/>
     <div className="content" style={{...wrap,maxWidth:500}}>
@@ -426,14 +378,13 @@ export default function App() {
         <div style={{fontSize:40,marginBottom:12}}>🔑</div>
         <div className="section-label" style={{display:"block",marginBottom:16}}>{de?"RAUMCODE":"CÓDIGO DE SALA"}</div>
         <p style={{color:"#6a5a3a",fontSize:13,marginBottom:20}}>{de?"Gib den Code ein:":"Ingresa el código que te mandaron:"}</p>
-        <input className="field-input" value={joinCode} onChange={e=>setJoinCode(sanitizeCode(e.target.value.toUpperCase()))} placeholder={de?"z.B. GOL482931":"ej. GOL482931"} maxLength={12} style={{textAlign:"center",fontSize:20,letterSpacing:4,marginBottom:16}}/>
+        <input className="field-input" value={joinCode} onChange={e=>setJoinCode(sanitizeCode(e.target.value.toUpperCase()))} placeholder="ej. GOL482931" maxLength={12} style={{textAlign:"center",fontSize:20,letterSpacing:4,marginBottom:16}}/>
         <MsgBanner/>
-        <button className="btn-gold" onClick={joinRoom} disabled={loading||!!joinLockedAt.current}>{loading?"...":(de?"BEITRETEN →":"UNIRME →")}</button>
+        <button className="btn-gold" onClick={joinRoom} disabled={loading||!!joinLockedAt.current}>{loading?"...":"UNIRME →"}</button>
       </div>
     </div></div>
   );
 
-  // ════════════ PREDICT ═════════════════════════════════════════════════════
   if (screen==="predict") {
     const isLocked=room?.[myKey]?.locked;
     return (
@@ -459,41 +410,14 @@ export default function App() {
               {[[0,de?"GRUPPEN":"GRUPOS"],[1,de?"FINALE":"FINAL"]].map(([i,lbl])=>(<button key={i} className="tab-btn" onClick={()=>setPaso(i)} style={{background:paso===i?`linear-gradient(135deg,${myColor.primary},${myColor.secondary}20)`:"rgba(255,255,255,0.03)",border:`1px solid ${paso===i?myColor.primary:"rgba(255,255,255,0.06)"}`,color:paso===i?"#fff":"#5a4a32"}}>{lbl}</button>))}
             </div>
             <MsgBanner/>
-            {paso===0&&(
-              <>
-                <div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>
-                  {GRUPOS.map(g=>(<div key={g.id} className="card"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:myColor.secondary,fontSize:13,marginBottom:10}}>{de?"GRUPPE":"GRUPO"} {g.id}</div>{[["p1",de?"🥇 1. Platz":"🥇 1ro"],["p2",de?"🥈 2. Platz":"🥈 2do"]].map(([pos,lbl])=>(<div key={pos} style={{marginBottom:8}}><label style={{fontSize:10,color:"#4a3a22",display:"block",marginBottom:4,letterSpacing:1}}>{lbl}</label><select className="field-select" value={preds.grupos?.[g.id]?.[pos]||""} onChange={e=>setPG(g.id,pos,e.target.value)}><option value="">{de?"Auswählen...":"Selecciona..."}</option>{g.equipos.map(eq=><option key={eq} value={eq}>{FLAGS[eq]||""} {eq}</option>)}</select></div>))}</div>))}
-                </div>
-                <div style={{textAlign:"center",marginTop:22,display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-                  <button className="btn-ghost" onClick={()=>savePreds(false)} disabled={loading}>💾 {de?"SPEICHERN":"GUARDAR BORRADOR"}</button>
-                  <button className="btn-gold" onClick={()=>gruposCompletos&&setPaso(1)} style={{opacity:gruposCompletos?1:0.4,cursor:gruposCompletos?"pointer":"default"}}>{gruposCompletos?(de?"WEITER →":"CONTINUAR →"):(de?"ALLE AUSFÜLLEN":"COMPLETA LOS GRUPOS")}</button>
-                </div>
-              </>
-            )}
-            {paso===1&&(
-              <>
-                <div style={{display:"grid",gap:14,maxWidth:500,margin:"0 auto"}}>
-                  {[{key:"campeon",label:de?"🏆 WELTMEISTER":"🏆 CAMPEÓN",pts:`+${PUNTOS.campeon} pts`},{key:"finalista",label:de?"🥈 FINALIST":"🥈 FINALISTA",pts:`+${PUNTOS.finalista} pts`}].map(({key,label,pts})=>(<div key={key} className="card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><label style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:2,fontSize:15,color:"#c8a030"}}>{label}</label><span style={{color:"#5dff8a",fontSize:11,fontWeight:"bold"}}>{pts}</span></div><select className="field-select" value={preds[key]||""} onChange={e=>{if(isValidTeam(e.target.value))setPreds(p=>({...p,[key]:e.target.value}))}}><option value="">{de?"Auswählen...":"Selecciona..."}</option>{TODOS.map(eq=><option key={eq} value={eq}>{FLAGS[eq]||""} {eq}</option>)}</select></div>))}
-                  <div className="card-dark">
-                    <div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#d4a017",fontSize:13,marginBottom:12}}>{de?"PUNKTESYSTEM":"SISTEMA DE PUNTOS"}</div>
-                    {[[de?"1ro exacto":"1ro exacto",`+${PUNTOS.p1}`],[de?"2do exacto":"2do exacto",`+${PUNTOS.p2}`],["Invertido",`+${PUNTOS.p2}`],[de?"Finalista":"Finalista",`+${PUNTOS.finalista}`],[de?"Campeón":"Campeón",`+${PUNTOS.campeon}`]].map(([l,p])=>(<div key={l} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#4a3a22",marginBottom:5}}><span>{l}</span><span style={{color:"#d4a017",fontWeight:"bold"}}>{p} pts</span></div>))}
-                  </div>
-                </div>
-                <div style={{textAlign:"center",marginTop:22,display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}>
-                  <button className="btn-ghost" onClick={()=>setPaso(0)}>← {de?"ZURÜCK":"ATRÁS"}</button>
-                  <button className="btn-ghost" onClick={()=>savePreds(false)} disabled={loading}>💾 {de?"SPEICHERN":"GUARDAR"}</button>
-                  <button className="btn-gold" onClick={()=>savePreds(true)} disabled={loading}>🔒 {de?"EINREICHEN":"CONFIRMAR"}</button>
-                </div>
-                <p style={{textAlign:"center",color:"#3a2a12",fontSize:11,marginTop:10}}>{de?"Nach dem Einreichen nicht mehr änderbar.":"Una vez confirmadas no puedes cambiarlas."}</p>
-              </>
-            )}
+            {paso===0&&(<><div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>{GRUPOS.map(g=>(<div key={g.id} className="card"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:myColor.secondary,fontSize:13,marginBottom:10}}>{de?"GRUPPE":"GRUPO"} {g.id}</div>{[["p1",de?"🥇 1. Platz":"🥇 1ro"],["p2",de?"🥈 2. Platz":"🥈 2do"]].map(([pos,lbl])=>(<div key={pos} style={{marginBottom:8}}><label style={{fontSize:10,color:"#4a3a22",display:"block",marginBottom:4,letterSpacing:1}}>{lbl}</label><select className="field-select" value={preds.grupos?.[g.id]?.[pos]||""} onChange={e=>setPG(g.id,pos,e.target.value)}><option value="">{de?"Auswählen...":"Selecciona..."}</option>{g.equipos.map(eq=><option key={eq} value={eq}>{FLAGS[eq]||""} {eq}</option>)}</select></div>))}</div>))}</div><div style={{textAlign:"center",marginTop:22,display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button className="btn-ghost" onClick={()=>savePreds(false)} disabled={loading}>💾 {de?"SPEICHERN":"GUARDAR BORRADOR"}</button><button className="btn-gold" onClick={()=>gruposCompletos&&setPaso(1)} style={{opacity:gruposCompletos?1:0.4,cursor:gruposCompletos?"pointer":"default"}}>{gruposCompletos?(de?"WEITER →":"CONTINUAR →"):(de?"ALLE AUSFÜLLEN":"COMPLETA LOS GRUPOS")}</button></div></>)}
+            {paso===1&&(<><div style={{display:"grid",gap:14,maxWidth:500,margin:"0 auto"}}>{[{key:"campeon",label:de?"🏆 WELTMEISTER":"🏆 CAMPEÓN",pts:`+${PUNTOS.campeon} pts`},{key:"finalista",label:de?"🥈 FINALIST":"🥈 FINALISTA",pts:`+${PUNTOS.finalista} pts`}].map(({key,label,pts})=>(<div key={key} className="card"><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:10}}><label style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:2,fontSize:15,color:"#c8a030"}}>{label}</label><span style={{color:"#5dff8a",fontSize:11,fontWeight:"bold"}}>{pts}</span></div><select className="field-select" value={preds[key]||""} onChange={e=>{if(isValidTeam(e.target.value))setPreds(p=>({...p,[key]:e.target.value}))}}><option value="">{de?"Auswählen...":"Selecciona..."}</option>{TODOS.map(eq=><option key={eq} value={eq}>{FLAGS[eq]||""} {eq}</option>)}</select></div>))}<div className="card-dark"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#d4a017",fontSize:13,marginBottom:12}}>{de?"PUNKTESYSTEM":"SISTEMA DE PUNTOS"}</div>{[[de?"1ro exacto":"1ro exacto",`+${PUNTOS.p1}`],[de?"2do exacto":"2do exacto",`+${PUNTOS.p2}`],["Invertido",`+${PUNTOS.p2}`],[de?"Finalista":"Finalista",`+${PUNTOS.finalista}`],[de?"Campeón":"Campeón",`+${PUNTOS.campeon}`]].map(([l,p])=>(<div key={l} style={{display:"flex",justifyContent:"space-between",fontSize:12,color:"#4a3a22",marginBottom:5}}><span>{l}</span><span style={{color:"#d4a017",fontWeight:"bold"}}>{p} pts</span></div>))}</div></div><div style={{textAlign:"center",marginTop:22,display:"flex",gap:10,justifyContent:"center",flexWrap:"wrap"}}><button className="btn-ghost" onClick={()=>setPaso(0)}>← {de?"ZURÜCK":"ATRÁS"}</button><button className="btn-ghost" onClick={()=>savePreds(false)} disabled={loading}>💾 {de?"SPEICHERN":"GUARDAR"}</button><button className="btn-gold" onClick={()=>savePreds(true)} disabled={loading}>🔒 {de?"EINREICHEN":"CONFIRMAR"}</button></div><p style={{textAlign:"center",color:"#3a2a12",fontSize:11,marginTop:10}}>{de?"Nach dem Einreichen nicht mehr änderbar.":"Una vez confirmadas no puedes cambiarlas."}</p></>)}
           </>
         )}
       </div></div>
     );
   }
 
-  // ════════════ RESULTS ═════════════════════════════════════════════════════
   if (screen==="results") return (
     <div style={pageBase}><FontLoader/><PitchBg/>
     <div className="content" style={wrap}>
@@ -515,7 +439,6 @@ export default function App() {
     </div></div>
   );
 
-  // ════════════ DASHBOARD ═══════════════════════════════════════════════════
   if (screen==="dashboard") {
     const p1Preds=room?.p1?.preds,p2Preds=room?.p2?.preds;
     const rr=room?.results||{grupos:{},campeon:"",finalista:""};
@@ -534,17 +457,12 @@ export default function App() {
           {!leader&&(score1>0||score2>0)&&<div className="verdict" style={{background:"rgba(212,160,23,0.1)",border:"1px solid rgba(212,160,23,0.2)",color:"#d4a017"}}>⚖️ {de?"UNENTSCHIEDEN!":"¡EMPATE!"}</div>}
           {score1===0&&score2===0&&<p className="pulse" style={{color:"#3a2a12",fontSize:12,marginTop:12,letterSpacing:2}}>{de?"NOCH KEINE ERGEBNISSE":"SIN RESULTADOS AÚN"}</p>}
         </div>
-
         <div style={{display:"flex",gap:6,marginBottom:18,flexWrap:"wrap"}}>
           {[["score",de?"📊 PUNKTE":"📊 PUNTOS"],["compare",de?"⚔️ VERGLEICH":"⚔️ COMPARAR"],["code",de?"🔑 CODE":"🔑 CÓDIGO"]].map(([id,lbl])=>(<button key={id} className="tab-btn" onClick={()=>setActiveTab(id)} style={{background:activeTab===id?"linear-gradient(135deg,#c8940e,#d4a017)":"rgba(255,255,255,0.03)",border:`1px solid ${activeTab===id?"#d4a017":"rgba(255,255,255,0.06)"}`,color:activeTab===id?"#050a05":"#5a4a32"}}>{lbl}</button>))}
         </div>
-
         {activeTab==="score"&&(<div style={{display:"grid",gridTemplateColumns:"repeat(auto-fill,minmax(310px,1fr))",gap:10}}>{GRUPOS.map(g=>{const re=rr.grupos?.[g.id],p1p=p1Preds?.grupos?.[g.id],p2p=p2Preds?.grupos?.[g.id],hasR=re?.p1||re?.p2;return(<div key={g.id} className="card" style={{opacity:hasR?1:0.55}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:8}}><span style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#d4a017",fontSize:12}}>{de?"GRUPPE":"GRUPO"} {g.id}</span>{!hasR&&<span style={{fontSize:10,color:"#3a2a12",letterSpacing:1}}>{de?"AUSSTEHEND":"PENDIENTE"}</span>}</div>{hasR&&<div style={{fontSize:11,color:"#4a3a22",marginBottom:8}}>✅ {FLAGS[re.p1]||""} {re.p1} / {FLAGS[re.p2]||""} {re.p2}</div>}<div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:8}}>{[[n1,p1p,PLAYER_COLORS[0]],[n2,p2p,PLAYER_COLORS[1]]].map(([nm,p,c])=>{const c1=hasR&&p?.p1===re?.p1?"hit":hasR&&(p?.p1===re?.p2||p?.p2===re?.p1)?"partial":"miss",c2=hasR&&p?.p2===re?.p2?"hit":hasR&&p?.p2===re?.p1?"partial":"miss";return(<div key={nm} className="card-dark"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:2,color:c.secondary,fontSize:11,marginBottom:5}}>{nm}</div><div className={c1} style={{fontSize:11,marginBottom:2}}>{FLAGS[p?.p1]||""} {p?.p1||"—"}</div><div className={c2} style={{fontSize:11}}>{FLAGS[p?.p2]||""} {p?.p2||"—"}</div></div>);})}</div></div>);})}</div>)}
-
         {activeTab==="compare"&&(<div style={{display:"grid",gap:12}}><div className="card"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#d4a017",fontSize:14,marginBottom:16}}>{de?"FINALE TIPPS":"PREDICCIONES FINALES"}</div>{[{key:"campeon",label:de?"🏆 WELTMEISTER":"🏆 CAMPEÓN",pts:PUNTOS.campeon},{key:"finalista",label:de?"🥈 FINALIST":"🥈 FINALISTA",pts:PUNTOS.finalista}].map(({key,label,pts})=>{const rv=rr[key],v1=p1Preds?.[key],v2=p2Preds?.[key];return(<div key={key} className="card-dark" style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:10}}><span style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:2,fontSize:13,color:"#8a7a5a"}}>{label}</span><span style={{color:"#5dff8a",fontSize:11}}>+{pts} pts</span></div><div style={{display:"grid",gridTemplateColumns:"1fr auto 1fr",gap:8,alignItems:"center"}}>{[[n1,v1,PLAYER_COLORS[0]],[n2,v2,PLAYER_COLORS[1]]].map(([nm,v,c],i)=>(<div key={nm} style={{textAlign:i===0?"left":"right"}}><div style={{fontFamily:"'Bebas Neue',sans-serif",color:c.secondary,fontSize:11,letterSpacing:2,marginBottom:3}}>{nm}</div><div style={{fontSize:14,color:rv&&v===rv?"#5dff8a":"#d4c4a0"}}>{v?`${FLAGS[v]||""} ${v}`:"—"}</div>{rv&&v===rv&&<div style={{fontSize:10,color:"#5dff8a"}}>✓ +{pts}</div>}</div>))}<div style={{color:"#2a1a08",fontSize:12,textAlign:"center"}}>VS</div></div>{rv&&<div style={{textAlign:"center",fontSize:11,color:"#4a3a22",marginTop:8,borderTop:"1px solid rgba(255,255,255,0.04)",paddingTop:6}}>Real: {FLAGS[rv]||""} {rv}</div>}</div>);})}</div><div className="card"><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#d4a017",fontSize:13,marginBottom:12}}>{de?"STATUS":"ESTADO"}</div>{[["p1",n1,PLAYER_COLORS[0]],["p2",n2,PLAYER_COLORS[1]]].map(([k,nm,c])=>(<div key={k} style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><span style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:2,color:c.secondary,fontSize:14}}>{nm}</span><span style={{fontSize:11,padding:"3px 12px",borderRadius:10,background:room?.[k]?.locked?"rgba(93,255,138,0.12)":"rgba(255,255,255,0.04)",color:room?.[k]?.locked?"#5dff8a":"#4a3a22",border:`1px solid ${room?.[k]?.locked?"rgba(93,255,138,0.25)":"rgba(255,255,255,0.06)"}`,fontFamily:"'Oswald',sans-serif",letterSpacing:1}}>{room?.[k]?.locked?(de?"✓ GESPEICHERT":"✓ CONFIRMADO"):(de?"⏳ AUSSTEHEND":"⏳ PENDIENTE")}</span></div>))}</div></div>)}
-
         {activeTab==="code"&&(<div className="card" style={{textAlign:"center"}}><div style={{fontSize:36,marginBottom:12}}>🔑</div><div style={{fontFamily:"'Bebas Neue',sans-serif",letterSpacing:3,color:"#8a7a5a",fontSize:13,marginBottom:12}}>{de?"TEILE DIESEN CODE":"COMPARTE ESTE CÓDIGO"}</div><div className="room-code" style={{display:"block",marginBottom:16}}>{roomCode}</div><p style={{color:"#4a3a22",fontSize:12,maxWidth:300,margin:"0 auto 20px"}}>{de?"Die andere Person gibt diesen Code beim Beitreten ein.":"La otra persona lo ingresa al unirse."}</p><div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:10,maxWidth:300,margin:"0 auto"}}>{[["p1",n1,PLAYER_COLORS[0]],["p2",n2,PLAYER_COLORS[1]]].map(([k,nm,c])=>(<div key={k} className="card-dark" style={{textAlign:"center"}}><div style={{fontFamily:"'Bebas Neue',sans-serif",color:c.secondary,fontSize:12,letterSpacing:2}}>{nm}</div><div style={{fontSize:11,color:room?.[k]?.locked?"#5dff8a":"#4a3a22",marginTop:4}}>{room?.[k]?.locked?"✓ Listo":"⏳ Pendiente"}</div></div>))}</div></div>)}
-
         <div style={{marginTop:20,display:"flex",gap:10,flexWrap:"wrap",justifyContent:"center"}}>
           {!room?.[myKey]?.locked&&<button className="btn-ghost" onClick={()=>setScreen("predict")}>✏️ {de?"TIPPS BEARBEITEN":"EDITAR PREDICCIONES"}</button>}
           <button className="btn-gold" onClick={()=>setScreen("results")}>⚽ {de?"ERGEBNISSE":"INGRESAR RESULTADOS"}</button>
